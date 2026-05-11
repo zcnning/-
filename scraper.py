@@ -12,7 +12,7 @@ HEADERS = {
 }
 
 # 2. 定义你感兴趣的关键词
-KEYWORDS = ["VR内容制作", "VR项目", "虚拟现实", "VR"]
+KEYWORDS = ["VR内容制作", "VR项目", "上海", "VR"]
 
 def get_tenders():
     tenders = []
