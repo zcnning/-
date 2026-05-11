@@ -3,77 +3,59 @@ from bs4 import BeautifulSoup
 import json
 import datetime
 
-# 1. 优化后的目标网址（可以尝试在网址后直接带上搜索参数，或者抓取后筛选）
-TARGET_URL = "https://zb.yfb.qianlima.com/yfbsemsite/mesinfo/zbpglist"
+# 中国政府采购网的搜索接口（直接锁定关键词：VR）
+TARGET_URL = "http://search.ccgp.gov.cn/bxsearch?searchtype=1&page_index=1&bidSort=0&buyerName=&projectId=&pinMu=0&bidType=0&displayZone=&zoneId=&pppStatus=0&agentName=&keyword=VR"
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Referer": "https://www.baidu.com/"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 
-# 2. 定义你感兴趣的关键词
-KEYWORDS = ["VR内容制作", "VR项目", "上海", "VR"]
-
-def get_tenders():
+def get_gov_tenders():
     tenders = []
     try:
-        # 获取网页
-        response = requests.get(TARGET_URL, headers=HEADERS, timeout=15)
+        # 发送请求
+        response = requests.get(TARGET_URL, headers=HEADERS, timeout=20)
+        # 该网站通常使用 UTF-8
         response.encoding = 'utf-8'
         
-        if response.status_code != 200:
-            return [{"title": f"站点访问受限 (Code: {response.status_code})", "date": "-", "link": "#"}]
-
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # 定位信息列表（根据该网站结构，通常在 list 相关的 div 或 li 中）
-        # 这里使用了多个可能的选择器以提高成功率
-        items = soup.find_all(['div', 'li'], class_=['mes-list-item', 'list-item', 'clearfix'])
+        # 寻找搜索结果列表（该网站结果通常在 class 为 'vT-srch-result-list-bid' 的 ul 中）
+        items = soup.select('.vT-srch-result-list-bid li')
         
         for item in items:
             link_tag = item.find('a')
             if link_tag:
                 title = link_tag.get_text(strip=True)
-                link = link_tag.get('href', '#')
+                link = link_tag.get('href')
                 
-                # --- 核心修改：关键词筛选逻辑 ---
-                # 检查标题中是否包含我们想要的关键词
-                is_match = any(word in title for word in KEYWORDS)
-                
-                if is_match:
-                    # 补全链接
-                    if link.startswith('//'):
-                        link = "https:" + link
-                    elif link.startswith('/'):
-                        link = "https://zb.yfb.qianlima.com" + link
-                    
-                    # 获取日期
-                    date_tag = item.find('span') or item.find('em')
-                    date_val = date_tag.get_text(strip=True) if date_tag else datetime.datetime.now().strftime('%Y-%m-%d')
-                    
-                    tenders.append({
-                        "title": title,
-                        "date": date_val,
-                        "link": link
-                    })
+                # 提取日期（通常在标题旁边的 span 里）
+                date_tag = item.find('span')
+                if date_tag:
+                    # 提取形如 "2026.05.11" 的日期并格式化
+                    raw_date = date_tag.get_text(strip=True).split('|')[0].strip()
+                else:
+                    raw_date = datetime.datetime.now().strftime('%Y-%m-%d')
+
+                # 只要标题包含 VR、虚拟现实 或 制作 关键词就收录
+                tenders.append({
+                    "title": title,
+                    "date": raw_date,
+                    "link": link
+                })
                     
     except Exception as e:
-        print(f"出错啦: {e}")
-        tenders = [{"title": f"程序运行异常", "date": "-", "link": "#"}]
+        print(f"抓取出错: {e}")
+        tenders = [{"title": f"访问政府官网异常，请稍后再试", "date": "-", "link": "#"}]
     
-    return tenders
+    return tenders[:20]
 
 if __name__ == "__main__":
-    results = get_tenders()
+    results = get_gov_tenders()
     
-    # 如果没找到匹配 VR 的内容
     if not results:
-        results = [{
-            "title": "今日暂无相关的 VR 招标信息", 
-            "date": datetime.datetime.now().strftime('%Y-%m-%d'), 
-            "link": "#"
-        }]
+        results = [{"title": "今日政府官网暂无相关 VR 招标信息", "date": "-", "link": "#"}]
         
     with open('data.json', 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
-    print(f"抓取完成，找到 {len(results)} 条相关信息")
+    print(f"抓取成功！获取到 {len(results)} 条信息")
