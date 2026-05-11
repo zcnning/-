@@ -1,11 +1,35 @@
 <!DOCTYPE html>
-<html>
-<head><title>今日招标信息</title></head>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>招标信息整合站</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        .item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .date { color: #888; font-size: 0.9em; }
+    </style>
+</head>
 <body>
-    <h1>欢迎来到招标信息整合站</h1>
-    <p>数据正在努力加载中，每天自动更新...</p>
-    <ul id="list">
-        <li>测试信息：某某工程招标 - 2026/05/11</li>
-    </ul>
+    <h1>今日招标信息整合</h1>
+    <div id="container">加载中...</div>
+
+    <script>
+        // 自动读取 data.json 里的内容
+        fetch('data.json')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('container');
+                container.innerHTML = '';
+                data.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'item';
+                    div.innerHTML = `<a href="${item.link}">${item.title}</a> <span class="date">(${item.date})</span>`;
+                    container.appendChild(div);
+                });
+            })
+            .catch(err => {
+                document.getElementById('container').innerText = '暂无数据，请等待第一次自动抓取运行。';
+            });
+    </script>
 </body>
 </html>
