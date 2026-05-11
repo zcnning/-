@@ -11,7 +11,7 @@ def get_data():
     today = datetime.datetime.now().strftime('%Y-%m-%d')
     new_data = [
         {"title": "VR内容制作", "date": today, "link": "#"},
-        {"title": "VR项目", "date": today, "link": "#"},
+        {"title": "上海", "date": today, "link": "#"},
         {"title": "VR体验", "date": today, "link": "#"}
     ]
     return new_data
