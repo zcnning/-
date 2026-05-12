@@ -2,7 +2,7 @@ name: Daily Update
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 每天北京时间上午 8 点左右运行
+    - cron: '30 1 * * *'  # 这代表北京时间 09:30
   workflow_dispatch: # 允许我们手动点击运行
 
 jobs:
